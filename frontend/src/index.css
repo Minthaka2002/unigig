@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: #2454ff;
+  color: #fafaf8;
+}
+
+.eyebrow {
+  @apply font-mono text-xs uppercase tracking-[0.18em] text-signal;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg bg-ink px-5 py-3 font-display text-sm font-semibold text-paper transition hover:bg-signal-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg border border-ink/15 bg-white px-5 py-3 font-display text-sm font-semibold text-ink transition hover:border-ink/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal;
+}
+
+.btn-danger {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg bg-alert px-5 py-3 font-display text-sm font-semibold text-white transition hover:bg-alert-deep;
+}
+
+.card {
+  @apply rounded-2xl border border-ink/8 bg-white p-6 shadow-card;
+}
+
+.input {
+  @apply w-full rounded-lg border border-ink/15 bg-white px-4 py-2.5 text-sm text-ink placeholder:text-slate-soft focus:border-signal focus:outline-none focus:ring-2 focus:ring-signal/20;
+}
+
+.label {
+  @apply mb-1.5 block text-sm font-medium text-ink/80;
+}

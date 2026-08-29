@@ -1,0 +1,108 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: unigig-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: unigig
+      POSTGRES_PASSWORD: unigig_dev_pw
+      POSTGRES_DB: unigig
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unigig"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  auth-service:
+    build: ./services/auth-service
+    container_name: unigig-auth-service
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://unigig:unigig_dev_pw@postgres:5432/auth_db
+      JWT_SECRET: ${JWT_SECRET:-unigig_super_secret_dev_key_change_me}
+      JWT_ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 720
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8001:8000"
+
+  task-service:
+    build: ./services/task-service
+    container_name: unigig-task-service
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://unigig:unigig_dev_pw@postgres:5432/task_db
+      JWT_SECRET: ${JWT_SECRET:-unigig_super_secret_dev_key_change_me}
+      JWT_ALGORITHM: HS256
+      AUTH_SERVICE_URL: http://auth-service:8000
+      PRICING_SERVICE_URL: http://pricing-service:8000
+      MATCHING_SERVICE_URL: http://matching-service:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8002:8000"
+
+  matching-service:
+    build: ./services/matching-service
+    container_name: unigig-matching-service
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://unigig:unigig_dev_pw@postgres:5432/matching_db
+      JWT_SECRET: ${JWT_SECRET:-unigig_super_secret_dev_key_change_me}
+      JWT_ALGORITHM: HS256
+      AUTH_SERVICE_URL: http://auth-service:8000
+      TASK_SERVICE_URL: http://task-service:8000
+      PING_TIMEOUT_SECONDS: 60
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8003:8000"
+
+  pricing-service:
+    build: ./services/pricing-service
+    container_name: unigig-pricing-service
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://unigig:unigig_dev_pw@postgres:5432/pricing_db
+      JWT_SECRET: ${JWT_SECRET:-unigig_super_secret_dev_key_change_me}
+      JWT_ALGORITHM: HS256
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8004:8000"
+
+  gateway:
+    build: ./gateway
+    container_name: unigig-gateway
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+      - task-service
+      - matching-service
+      - pricing-service
+    ports:
+      - "8000:80"
+
+  frontend:
+    build: ./frontend
+    container_name: unigig-frontend
+    restart: unless-stopped
+    depends_on:
+      - gateway
+    ports:
+      - "3000:80"
+
+volumes:
+  pgdata:
